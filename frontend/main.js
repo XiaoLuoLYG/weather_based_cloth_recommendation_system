@@ -19,6 +19,7 @@ async function fetchAdvice(weatherData) {
     return await response.json();
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.createElement('input');
     input.placeholder = "请输入城市名称...";

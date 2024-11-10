@@ -14,10 +14,16 @@ load_dotenv()
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
+print(OPENWEATHER_API_KEY, OPENAI_API_KEY)
 openai.api_key = OPENAI_API_KEY
 
-@app.route('/autocomplete', methods=['GET'])
+# 根路径
+@app.route('/')
+def index():
+    return "API is running. Use /api endpoints."
+
+# 自动补全城市
+@app.route('/api/autocomplete', methods=['GET'])
 def autocomplete():
     query = request.args.get('query')
     url = f"https://api.openweathermap.org/geo/1.0/direct?q={query}&limit=5&appid={OPENWEATHER_API_KEY}"
@@ -25,7 +31,8 @@ def autocomplete():
     suggestions = [f"{city['name']}, {city['country']}" for city in response.json()]
     return jsonify(suggestions)
 
-@app.route('/weather', methods=['GET'])
+# 获取天气信息
+@app.route('/api/weather', methods=['GET'])
 def get_weather():
     city = request.args.get('city')
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric&lang=zh_cn"
@@ -41,7 +48,8 @@ def get_weather():
         "description": data["weather"][0]["description"]
     })
 
-@app.route('/advice', methods=['POST'])
+# 生成穿衣建议
+@app.route('/api/advice', methods=['POST'])
 def generate_advice():
     weather_data = request.json
     prompt = f"""
@@ -56,10 +64,10 @@ def generate_advice():
     请给出详细的穿衣建议。
     """
     response = openai.ChatCompletion.create(
-        model="gpt-4-turbo",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     return jsonify({"advice": response['choices'][0]['message']['content']})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, host='0.0.0.0', port=5000)
