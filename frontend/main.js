@@ -3,9 +3,14 @@ console.log("main.js 文件加载成功");
 const apiUrl = "/api";
 
 async function fetchSuggestions(query) {
-    console.log(`正在获取城市建议：${query}`);
-    const response = await fetch(`${apiUrl}/autocomplete?query=${query}`);
-    return await response.json();
+    try {
+        console.log(`正在获取城市建议：${query}`);
+        const response = await fetch(`${apiUrl}/autocomplete?query=${query}`);
+        return await response.json();
+    } catch (error) {
+        console.error("获取城市建议失败:", error);
+        return [];
+    }
 }
 
 async function fetchWeather(city) {
@@ -25,24 +30,33 @@ async function fetchAdvice(weatherData) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("页面加载完成");
-    
-    const input = document.createElement('input');
-    input.placeholder = "请输入城市名称...";
-    document.body.appendChild(input);
-
-    const resultBox = document.createElement('div');
-    document.body.appendChild(resultBox);
+    const input = document.getElementById('city-input');
+    const detectBtn = document.getElementById('detect-btn');
+    const suggestionsBox = document.getElementById('suggestions');
+    const resultBox = document.getElementById('result-box');
+    const getAdviceBtn = document.getElementById('get-advice-btn');
 
     input.addEventListener('input', async () => {
-        console.log(`输入城市名称：${input.value}`);
-        const suggestions = await fetchSuggestions(input.value);
-        resultBox.innerHTML = suggestions.map(s => `<div>${s}</div>`).join('');
+        const query = input.value;
+        const suggestions = await fetchSuggestions(query);
+        suggestionsBox.innerHTML = suggestions.map(s => `<div>${s}</div>`).join('');
+        suggestionsBox.style.display = suggestions.length ? 'block' : 'none';
     });
 
-    input.addEventListener('change', async () => {
-        console.log(`城市选择完成：${input.value}`);
-        const weatherData = await fetchWeather(input.value);
+    suggestionsBox.addEventListener('click', (event) => {
+        input.value = event.target.textContent;
+        suggestionsBox.style.display = 'none';
+    });
+
+    detectBtn.addEventListener('click', async () => {
+        const response = await fetch(`${apiUrl}/location`);
+        const data = await response.json();
+        input.value = data.city;
+    });
+
+    getAdviceBtn.addEventListener('click', async () => {
+        const city = input.value;
+        const weatherData = await fetchWeather(city);
         const advice = await fetchAdvice(weatherData);
         resultBox.innerHTML = `<p>${advice.advice}</p>`;
     });
